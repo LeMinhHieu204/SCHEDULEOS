@@ -1,0 +1,149 @@
+<UserControl x:Class="ScheduleOS.Desktop.Views.TopBarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="28,0,150,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" MaxWidth="660" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Button Grid.Column="0" Style="{StaticResource Button.IconOutline}" Content="&#xE72B;" Margin="0,0,12,0" VerticalAlignment="Center"
+                Command="{Binding GoBackCommand}" ToolTip="Back (Alt+Left)" AutomationProperties.Name="Back" WindowChrome.IsHitTestVisibleInChrome="True"
+                Visibility="{Binding Navigation.CanGoBack, Converter={StaticResource VisibleWhen}}" />
+
+        <!-- Global search -->
+        <Grid Grid.Column="1" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+            <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Height="42">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="&#xE721;" Style="{StaticResource Icon}" FontSize="15" Margin="14,0,4,0" />
+                    <Border DockPanel.Dock="Right" Background="{DynamicResource Brush.SurfaceAlt}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+                            CornerRadius="6" Padding="7,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBlock Text="Ctrl + K" FontSize="11" Foreground="{DynamicResource Brush.TextSecondary}" />
+                    </Border>
+                    <TextBox x:Name="SearchBox" Text="{Binding Search.Query, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0" Background="Transparent"
+                             Tag="Search customers, appointments, staff, services, invoices…" PreviewKeyDown="SearchBox_PreviewKeyDown"
+                             AutomationProperties.AutomationId="GlobalSearch" AutomationProperties.Name="Global search" />
+                </DockPanel>
+            </Border>
+            <Popup IsOpen="{Binding Search.IsOpen}" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="False"
+                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Grid}}" HorizontalOffset="-40" VerticalOffset="10">
+                <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="12" Margin="0,0,14,14"
+                        Effect="{StaticResource Shadow.Popup}" Padding="6">
+                    <DockPanel MaxHeight="440">
+                        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Search.Status}" Style="{StaticResource Text.Caption}" Margin="10,6,10,4" />
+                        <ListBox x:Name="SearchResults" ItemsSource="{Binding Search.Results}" SelectedItem="{Binding Search.Selected}" AutomationProperties.AutomationId="SearchResults"
+                                 MouseLeftButtonUp="SearchResults_MouseUp">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="8,7">
+                                        <Border DockPanel.Dock="Left" Width="32" Height="32" CornerRadius="8" Background="{DynamicResource Brush.PrimaryLight}" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding Kind, Converter={StaticResource SearchIcon}}" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Strong}" />
+                                            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Caption}" />
+                                        </StackPanel>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+            </Popup>
+        </Grid>
+
+        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" WindowChrome.IsHitTestVisibleInChrome="True">
+            <!-- Notifications -->
+            <Grid Margin="0,0,14,0">
+                <Button Style="{StaticResource Button.Icon}" Width="40" Height="40" FontSize="18" Content="&#xEA8F;" Command="{Binding OpenNotificationsCommand}"
+                        ToolTip="Notifications and reminder queue" AutomationProperties.AutomationId="NotificationsButton" AutomationProperties.Name="Notifications" />
+                <Border Background="{DynamicResource Brush.Danger}" CornerRadius="9" MinWidth="18" Height="18" Padding="4,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,0,-2,0" IsHitTestVisible="False" Visibility="{Binding UnreadCount, Converter={StaticResource VisibleWhen}}">
+                    <TextBlock Text="{Binding UnreadCount}" Foreground="White" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Grid>
+
+            <!-- Quick add -->
+            <Button x:Name="QuickAddButton" Style="{StaticResource Button.Success}" Height="42" Padding="16,0" Margin="0,0,18,0" Click="QuickAdd_Click"
+                    AutomationProperties.AutomationId="QuickAdd" AutomationProperties.Name="Quick Add">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource Font.Icons}" FontSize="13" VerticalAlignment="Center" Margin="0,0,9,0" />
+                    <TextBlock Text="Quick Add" VerticalAlignment="Center" />
+                    <TextBlock Text="&#xE70D;" FontFamily="{StaticResource Font.Icons}" FontSize="10" VerticalAlignment="Center" Margin="12,1,0,0" />
+                </StackPanel>
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="New Appointment" InputGestureText="Ctrl+N" Command="{Binding NewAppointmentCommand}" IsEnabled="{Binding CanCreateAppointments}"
+                                  AutomationProperties.AutomationId="QuickAdd_Appointment">
+                            <MenuItem.Icon><TextBlock Text="&#xE787;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="New Customer" Command="{Binding NewCustomerCommand}" IsEnabled="{Binding CanManageCustomers}" AutomationProperties.AutomationId="QuickAdd_Customer">
+                            <MenuItem.Icon><TextBlock Text="&#xE8FA;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="New Staff Member" Command="{Binding NewStaffCommand}" IsEnabled="{Binding CanManageStaff}" AutomationProperties.AutomationId="QuickAdd_Staff">
+                            <MenuItem.Icon><TextBlock Text="&#xE77B;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="New Service" Command="{Binding NewServiceCommand}" IsEnabled="{Binding CanManageServices}" AutomationProperties.AutomationId="QuickAdd_Service">
+                            <MenuItem.Icon><TextBlock Text="&#xE8EC;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Record Payment" Command="{Binding RecordPaymentCommand}" IsEnabled="{Binding CanRecordPayments}" AutomationProperties.AutomationId="QuickAdd_Payment">
+                            <MenuItem.Icon><TextBlock Text="&#xE8C7;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+
+            <!-- Profile -->
+            <Button x:Name="ProfileButton" Style="{StaticResource Button.Ghost}" Padding="6,4" Height="48" Click="Profile_Click" AutomationProperties.AutomationId="ProfileMenu"
+                    AutomationProperties.Name="Profile menu">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="38" Height="38" CornerRadius="19" Background="{Binding UserName, Converter={StaticResource NameBrush}}">
+                        <TextBlock Text="{Binding UserInitials}" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding UserName}" Style="{StaticResource Text.Strong}" />
+                        <TextBlock Style="{StaticResource Text.Caption}">
+                            <Run Text="{Binding UserRole, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding SelectedLocation.Name, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                    <TextBlock Text="&#xE70D;" FontFamily="{StaticResource Font.Icons}" FontSize="10" Margin="12,0,2,0" VerticalAlignment="Center" Foreground="{DynamicResource Brush.TextSecondary}" />
+                </StackPanel>
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Location" IsEnabled="False" />
+                        <MenuItem Header="{Binding SelectedLocation.Name}" ItemsSource="{Binding Locations}" AutomationProperties.AutomationId="LocationMenu">
+                            <MenuItem.Icon><TextBlock Text="&#xE707;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                            <MenuItem.ItemContainerStyle>
+                                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                    <Setter Property="Header" Value="{Binding Name}" />
+                                    <Setter Property="Command" Value="{Binding DataContext.SelectLocationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <Setter Property="CommandParameter" Value="{Binding}" />
+                                </Style>
+                            </MenuItem.ItemContainerStyle>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Change password" Command="{Binding ChangePasswordCommand}">
+                            <MenuItem.Icon><TextBlock Text="&#xE8D7;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Toggle dark mode" Command="{Binding ToggleThemeCommand}">
+                            <MenuItem.Icon><TextBlock Text="&#xE790;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Lock session" InputGestureText="Ctrl+Shift+L" Command="{Binding LockSessionCommand}">
+                            <MenuItem.Icon><TextBlock Text="&#xE72E;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Open log folder" Command="{Binding OpenLogFolderCommand}">
+                            <MenuItem.Icon><TextBlock Text="&#xE8B7;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Sign out" Command="{Binding SignOutCommand}" AutomationProperties.AutomationId="SignOut">
+                            <MenuItem.Icon><TextBlock Text="&#xE7E8;" FontFamily="{StaticResource Font.Icons}" /></MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>

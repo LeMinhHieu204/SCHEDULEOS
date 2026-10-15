@@ -1,0 +1,285 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:p="clr-namespace:ScheduleOS.Desktop.ViewModels.Pages"
+                    xmlns:ctl="clr-namespace:ScheduleOS.Desktop.Controls"
+                    xmlns:core="clr-namespace:ScheduleOS.Desktop.Core">
+
+    <Style x:Key="StatCard" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="Margin" Value="6,0" />
+        <Setter Property="Padding" Value="18,14" />
+    </Style>
+
+    <!-- =================================================================== Payments -->
+    <DataTemplate DataType="{x:Type p:PaymentsViewModel}">
+        <DockPanel Margin="{StaticResource Pad.Page}" AutomationProperties.AutomationId="PaymentsPage">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Success}" Command="{Binding RecordCommand}" VerticalAlignment="Center"
+                        Visibility="{Binding CanRecord, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="PaymentsRecord">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8C7;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Record Payment" /></StackPanel>
+                </Button>
+                <StackPanel>
+                    <TextBlock Text="Payments" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="Immutable payment ledger, refunds, reversals and outstanding balances." Style="{StaticResource Text.Secondary}" FontSize="14" Margin="0,4,0,0" />
+                </StackPanel>
+            </DockPanel>
+
+            <UniformGrid DockPanel.Dock="Top" Columns="4" Margin="-6,0,-6,16">
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel><TextBlock Text="Received" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Totals.InflowMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="24" /></StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel><TextBlock Text="Refunds &amp; reversals" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Totals.RefundsMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="24" Foreground="{DynamicResource Brush.Danger}" /></StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel><TextBlock Text="Net collected" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Totals.NetMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="24" Foreground="{DynamicResource Brush.Success}" AutomationProperties.AutomationId="NetCollected" /></StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel><TextBlock Text="Outstanding (all time)" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding OutstandingTotal, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="24" Foreground="{DynamicResource Brush.WarningText}" /></StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Style="{StaticResource Card}" Padding="16,10">
+                <TabControl SelectedIndex="{Binding Tab}">
+                    <TabItem Header="Ledger">
+                        <DockPanel>
+                            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding Preset}" Width="150" Margin="0,0,10,0" />
+                                <ComboBox ItemsSource="{Binding MethodOptions}" SelectedItem="{Binding Method}" Width="190" Margin="0,0,10,0" />
+                                <ComboBox ItemsSource="{Binding KindOptions}" SelectedItem="{Binding Kind}" Width="130" Margin="0,0,10,0" />
+                                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Tag="Receipt, customer or appointment…" Width="260" />
+                            </WrapPanel>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" core:ItemActivation.Command="{Binding ReceiptCommand}" AutomationProperties.AutomationId="LedgerGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="DATE" Binding="{Binding RecordedAt, StringFormat={}{0:MMM d, yyyy h:mm tt}}" Width="150" />
+                                        <DataGridTextColumn Header="RECEIPT" Binding="{Binding ReceiptNumber}" Width="130" />
+                                        <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="1.2*" />
+                                        <DataGridTextColumn Header="APPOINTMENT" Binding="{Binding AppointmentReference}" Width="120" />
+                                        <DataGridTemplateColumn Header="TYPE" Width="100">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate><TextBlock Text="{Binding Kind}" Foreground="{Binding Kind, Converter={StaticResource PaymentKindBrush}}" FontWeight="SemiBold" VerticalAlignment="Center" /></DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="METHOD" Binding="{Binding Method, Converter={StaticResource MethodText}}" Width="*" />
+                                        <DataGridTextColumn Header="AMOUNT" Binding="{Binding SignedAmountMinor, Converter={StaticResource Money}}" Width="100" />
+                                        <DataGridTextColumn Header="BY" Binding="{Binding RecordedBy}" Width="110" />
+                                        <DataGridTemplateColumn Width="190">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Style="{StaticResource Button.Link}" Content="Receipt" Margin="0,0,10,0" Command="{Binding DataContext.ReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                        <Button Style="{StaticResource Button.Link}" Content="Refund" Margin="0,0,10,0" Command="{Binding DataContext.RefundCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                                Visibility="{Binding RefundableMinor, Converter={StaticResource VisibleWhen}}" />
+                                                        <Button Style="{StaticResource Button.Link}" Content="Reverse" Command="{Binding DataContext.ReverseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                                Visibility="{Binding RefundableMinor, Converter={StaticResource VisibleWhen}}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No payments in this period." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding Items.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="Outstanding Balances" AutomationProperties.AutomationId="OutstandingTab">
+                        <Grid>
+                            <DataGrid ItemsSource="{Binding Outstanding}" core:ItemActivation.Command="{Binding OpenAppointmentCommand}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding Start, StringFormat={}{0:MMM d, yyyy h:mm tt}}" Width="160" />
+                                    <DataGridTextColumn Header="APPOINTMENT" Binding="{Binding Reference}" Width="120" />
+                                    <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*" />
+                                    <DataGridTemplateColumn Header="STATUS" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate><ContentPresenter Content="{Binding Status}" ContentTemplate="{StaticResource StatusPill}" /></DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalMinor, Converter={StaticResource Money}}" Width="100" />
+                                    <DataGridTextColumn Header="PAID" Binding="{Binding PaidMinor, Converter={StaticResource Money}}" Width="100" />
+                                    <DataGridTextColumn Header="BALANCE" Binding="{Binding BalanceMinor, Converter={StaticResource Money}}" Width="100" />
+                                    <DataGridTemplateColumn Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource Button.Link}" Content="Collect" Command="{Binding DataContext.CollectCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Text="No outstanding balances." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Outstanding.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+            </Border>
+        </DockPanel>
+    </DataTemplate>
+
+    <!-- =================================================================== Analytics -->
+    <DataTemplate DataType="{x:Type p:AnalyticsViewModel}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" AutomationProperties.AutomationId="AnalyticsPage">
+            <StackPanel Margin="{StaticResource Pad.Page}">
+                <DockPanel Margin="0,0,0,16">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource Button.Secondary}" Content="CSV" Margin="0,0,8,0" Command="{Binding ExportCsvCommand}" AutomationProperties.AutomationId="ExportCsv" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="Excel" Margin="0,0,8,0" Command="{Binding ExportXlsxCommand}" AutomationProperties.AutomationId="ExportXlsx" />
+                        <Button Style="{StaticResource Button.Secondary}" Content="PDF" Margin="0,0,8,0" Command="{Binding ExportPdfCommand}" AutomationProperties.AutomationId="ExportPdf" />
+                        <Button Style="{StaticResource Button.Secondary}" Command="{Binding PrintCommand}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE749;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Print" /></StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Analytics &amp; Reports" Style="{StaticResource Text.H1}" />
+                        <TextBlock Style="{StaticResource Text.Secondary}" FontSize="14" Margin="0,4,0,0"><Run Text="Computed from recorded appointments and payments · " /><Run Text="{Binding PeriodText, Mode=OneWay}" /></TextBlock>
+                    </StackPanel>
+                </DockPanel>
+
+                <WrapPanel Margin="0,0,0,16">
+                    <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding Preset}" Width="170" Margin="0,0,10,0" AutomationProperties.AutomationId="ReportRange" />
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustom, Converter={StaticResource VisibleWhen}}">
+                        <DatePicker SelectedDate="{Binding CustomFrom}" Width="140" Margin="0,0,8,0" />
+                        <TextBlock Text="to" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource Text.Secondary}" />
+                        <DatePicker SelectedDate="{Binding CustomTo}" Width="140" />
+                    </StackPanel>
+                </WrapPanel>
+
+                <UniformGrid Columns="6" Margin="-6,0,-6,16">
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel>
+                            <TextBlock Text="Net revenue" Style="{StaticResource Text.Secondary}" />
+                            <TextBlock Text="{Binding Report.RevenueMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="22" AutomationProperties.AutomationId="ReportRevenue" />
+                            <TextBlock Text="{Binding Report.RevenueChangePercent, Converter={StaticResource Change}}" Foreground="{Binding Report.RevenueChangePercent, Converter={StaticResource Change}, ConverterParameter=brush}" FontSize="12" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel><TextBlock Text="Appointments" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Report.TotalAppointments}" Style="{StaticResource Text.Kpi}" FontSize="22" /></StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel><TextBlock Text="Average ticket" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Report.AverageTicketMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Kpi}" FontSize="22" /></StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel><TextBlock Text="Retention" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Report.RetentionRate, Converter={StaticResource Percent}}" Style="{StaticResource Text.Kpi}" FontSize="22" /></StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel><TextBlock Text="No-show rate" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Report.NoShowRate, Converter={StaticResource Percent}, ConverterParameter=P1}" Style="{StaticResource Text.Kpi}" FontSize="22" /></StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel><TextBlock Text="Cancellation rate" Style="{StaticResource Text.Secondary}" /><TextBlock Text="{Binding Report.CancellationRate, Converter={StaticResource Percent}, ConverterParameter=P1}" Style="{StaticResource Text.Kpi}" FontSize="22" /></StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Height="320" Margin="0,0,16,0">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Revenue by Day (net of refunds)" Style="{StaticResource Text.H3}" Margin="0,0,0,10" />
+                            <ctl:BarChart Points="{Binding RevenueChart}" AxisFormat="money" EmptyText="No payments in this period" />
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Height="320">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Appointment Status" Style="{StaticResource Text.H3}" Margin="0,0,0,8" />
+                            <ItemsControl DockPanel.Dock="Bottom" ItemsSource="{Binding StatusLegend}" Focusable="False">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,2,8,2">
+                                            <Ellipse DockPanel.Dock="Left" Width="9" Height="9" Fill="{Binding Brush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Display}" Style="{StaticResource Text.Caption}" />
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Secondary}" FontSize="12" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ctl:DonutChart Slices="{Binding StatusSlices}" CenterValue="{Binding Report.TotalAppointments}" CenterLabel="appointments" MaxWidth="170" MaxHeight="170" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Height="280" Margin="0,0,16,0">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Appointment Volume" Style="{StaticResource Text.H3}" Margin="0,0,0,10" />
+                            <ctl:BarChart Points="{Binding VolumeChart}" AxisFormat="number" EmptyText="No appointments in this period" />
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Height="280">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="New vs Returning Customers" Style="{StaticResource Text.H3}" Margin="0,0,0,8" />
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Ellipse Width="9" Height="9" Fill="#00B8BD" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,0,16,0"><Run Text="New " /><Run Text="{Binding Report.NewCustomers, Mode=OneWay}" /></TextBlock>
+                                <Ellipse Width="9" Height="9" Fill="#102532" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                <TextBlock Style="{StaticResource Text.Secondary}"><Run Text="Returning " /><Run Text="{Binding Report.ReturningCustomers, Mode=OneWay}" /></TextBlock>
+                            </StackPanel>
+                            <ctl:DonutChart Slices="{Binding CustomerSlices}" CenterValue="{Binding Report.UniqueCustomers}" CenterLabel="customers" MaxWidth="160" MaxHeight="160" />
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <Border Style="{StaticResource Card}" Padding="16,10">
+                    <TabControl SelectedIndex="{Binding Tab}">
+                        <TabItem Header="Service Performance">
+                            <DataGrid ItemsSource="{Binding Services}" MaxHeight="420">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="SERVICE" Binding="{Binding ServiceName}" Width="2*" />
+                                    <DataGridTextColumn Header="BOOKINGS" Binding="{Binding Bookings}" Width="*" />
+                                    <DataGridTextColumn Header="COMPLETED" Binding="{Binding Completed}" Width="*" />
+                                    <DataGridTextColumn Header="AVG MINUTES" Binding="{Binding AverageMinutes, StringFormat={}{0:0}}" Width="*" />
+                                    <DataGridTextColumn Header="REVENUE (COMPLETED)" Binding="{Binding RevenueMinor, Converter={StaticResource Money}}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem Header="Staff Performance">
+                            <DataGrid ItemsSource="{Binding Staff}" MaxHeight="420">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="STAFF" Binding="{Binding Name}" Width="1.5*" />
+                                    <DataGridTextColumn Header="APPTS" Binding="{Binding Appointments}" Width="*" />
+                                    <DataGridTextColumn Header="COMPLETED" Binding="{Binding Completed}" Width="*" />
+                                    <DataGridTextColumn Header="SCHEDULED H" Binding="{Binding ScheduledHours}" Width="*" />
+                                    <DataGridTextColumn Header="BOOKED H" Binding="{Binding BookedHours}" Width="*" />
+                                    <DataGridTextColumn Header="UTILIZATION" Binding="{Binding Utilization, Converter={StaticResource Percent}}" Width="*" />
+                                    <DataGridTextColumn Header="CANCEL/NO-SHOW" Binding="{Binding CancellationRate, Converter={StaticResource Percent}}" Width="*" />
+                                    <DataGridTextColumn Header="SERVICE REVENUE" Binding="{Binding ServiceRevenueMinor, Converter={StaticResource Money}}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem Header="Resource Utilization">
+                            <DataGrid ItemsSource="{Binding Resources}" MaxHeight="420">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="RESOURCE" Binding="{Binding Name}" Width="1.5*" />
+                                    <DataGridTextColumn Header="TYPE" Binding="{Binding Type}" Width="*" />
+                                    <DataGridTextColumn Header="BOOKED H" Binding="{Binding BookedHours}" Width="*" />
+                                    <DataGridTextColumn Header="AVAILABLE H" Binding="{Binding AvailableHours}" Width="*" />
+                                    <DataGridTextColumn Header="UTILIZATION" Binding="{Binding Utilization, Converter={StaticResource Percent}}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem Header="Outstanding Payments">
+                            <DataGrid ItemsSource="{Binding Outstanding}" MaxHeight="420">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding Start, StringFormat={}{0:MMM d, yyyy}}" Width="*" />
+                                    <DataGridTextColumn Header="APPOINTMENT" Binding="{Binding Reference}" Width="*" />
+                                    <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="1.5*" />
+                                    <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalMinor, Converter={StaticResource Money}}" Width="*" />
+                                    <DataGridTextColumn Header="PAID" Binding="{Binding PaidMinor, Converter={StaticResource Money}}" Width="*" />
+                                    <DataGridTextColumn Header="BALANCE" Binding="{Binding BalanceMinor, Converter={StaticResource Money}}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+                </Border>
+                <TextBlock Style="{StaticResource Text.SecondaryWrap}" FontSize="11.5" Margin="0,12,0,0"
+                           Text="Definitions: revenue = payments recorded in the period minus refunds and reversals (cash basis). Service and staff revenue = value of completed services (after discounts, before tax). New customer = first visit falls in the period. Exports contain exactly the numbers shown here." />
+            </StackPanel>
+        </ScrollViewer>
+    </DataTemplate>
+</ResourceDictionary>

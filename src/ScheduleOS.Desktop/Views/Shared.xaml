@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:c="clr-namespace:ScheduleOS.Desktop.Converters">
+    <c:StatusBrushConverter x:Key="StatusBrush" />
+    <c:StatusTextConverter x:Key="StatusText" />
+    <c:MoneyConverter x:Key="Money" />
+    <c:DurationConverter x:Key="Duration" />
+    <c:VisibleWhenConverter x:Key="VisibleWhen" />
+    <c:InverseBoolConverter x:Key="Not" />
+    <c:EqualsConverter x:Key="Equals" />
+    <c:NameBrushConverter x:Key="NameBrush" />
+    <c:HexBrushConverter x:Key="HexBrush" />
+    <c:EnumTextConverter x:Key="EnumText" />
+    <c:PercentConverter x:Key="Percent" />
+    <c:ChangeConverter x:Key="Change" />
+    <c:DateFormatConverter x:Key="Date" />
+    <c:InitialsConverter x:Key="Initials" />
+    <c:DialogMaxHeightConverter x:Key="DialogMaxHeight" />
+    <c:ToastBrushConverter x:Key="ToastBrush" />
+    <c:ResourceBrushConverter x:Key="ResBrush" />
+    <c:SearchIconConverter x:Key="SearchIcon" />
+    <c:ResourceStateBrushConverter x:Key="ResourceStateBrush" />
+    <c:ReminderStatusBrushConverter x:Key="ReminderBrush" />
+    <c:PaymentKindBrushConverter x:Key="PaymentKindBrush" />
+    <c:PaymentMethodTextConverter x:Key="MethodText" />
+    <c:ResourceTypeTextConverter x:Key="ResourceTypeText" />
+    <c:FileNameConverter x:Key="FileName" />
+    <c:BytesConverter x:Key="Bytes" />
+    <c:RelativeTimeConverter x:Key="Relative" />
+
+    <!-- Reusable avatar: binds to a person's name -->
+    <DataTemplate x:Key="Avatar">
+        <Border Width="36" Height="36" CornerRadius="18" Background="{Binding Converter={StaticResource NameBrush}, ConverterParameter=light}">
+            <TextBlock Text="{Binding Converter={StaticResource Initials}}" Foreground="{Binding Converter={StaticResource NameBrush}}"
+                       FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+    </DataTemplate>
+
+    <!-- Status pill: binds to an AppointmentStatus -->
+    <DataTemplate x:Key="StatusPill">
+        <Border Style="{StaticResource Badge}" Background="{Binding Converter={StaticResource StatusBrush}, ConverterParameter=bg}">
+            <TextBlock Text="{Binding Converter={StaticResource StatusText}}" Style="{StaticResource BadgeText}" Foreground="{Binding Converter={StaticResource StatusBrush}}" />
+        </Border>
+    </DataTemplate>
+
+
+</ResourceDictionary>

@@ -1,0 +1,24 @@
+<Application x:Class="ScheduleOS.Desktop.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnMainWindowClose">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Themes/Colors.Light.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Themes/Typography.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Themes/Controls.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/Shared.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/AuthViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/DashboardView.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/CalendarView.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/AppointmentViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/PeopleViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/CatalogViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/FinanceViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/SystemViews.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/ScheduleOS;component/Views/DialogViews.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

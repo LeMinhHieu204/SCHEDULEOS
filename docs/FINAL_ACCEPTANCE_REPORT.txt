@@ -1,0 +1,122 @@
+SCHEDULEOS — FINAL DEVELOPMENT & WINDOWS RELEASE RESULT
+========================================================
+
+Verification date: 2026-10-15
+Target: Windows x64, .NET 10 WPF, self-contained single-file publish
+Repository state: existing C# WPF project continued in place; no rebuild from scratch
+
+1. FINAL STATUS
+---------------
+
+Application status: ACCEPTED for the tested release journey.
+Release EXE: BUILT and exercised successfully.
+Installer: SCRIPT READY; installer binary NOT BUILT because no Inno Setup compiler
+           (iscc.exe) was available on the verification machine.
+
+2. ROOT CAUSES FOUND AND FIXED
+------------------------------
+
+2.1 Services page / STEP 6
+    The Services DataGrid had a proportional first column with no minimum width.
+    With the complete column set, the service-name cell collapsed and UIA could not
+    discover the newly saved service. The service column now has a 230px minimum,
+    ellipsis/tooltips, and an explicit automation name.
+
+    The service editor also now awaits the catalog page reload before closing the
+    dialog. This removes the race between the save result, debounced data notifier,
+    and UI automation lookup.
+
+2.2 Customer persistence assertion / STEP 15
+    Search was correctly bound, but the seeded demo data makes the term "Example"
+    match many generic @example.com email addresses. Alphabetical ordering could
+    place the persisted "Jordan Example" outside the first page. Search results now
+    prioritize a name match while retaining email and phone matches. A regression
+    integration test covers this behavior.
+
+    Customer search reload is also awaited through the page load gate, so a search
+    typed while the initial page load is active is not lost.
+
+3. VERIFIED MODULES AND FLOWS
+-----------------------------
+
+Onboarding/demo seed, login, dashboard, calendar day/week/month views, appointment
+search/detail, customer CRUD/search, staff CRUD and working hours, service catalog,
+rooms/resources, new appointment, staff/resource conflict blocking, confirm,
+reschedule, payment, invoice, reports, settings, backup, restore, restart
+persistence, SQLite migrations/triggers/WAL behavior, optimistic concurrency,
+duplicate submission protection, and data export/privacy paths were covered by the
+automated unit, integration, or real-application UI suites.
+
+The release UI journey specifically completed these 16 stages:
+onboarding; sign-in; dashboard; module navigation; create customer; create service;
+create staff and schedule; create room; book appointment; reject conflicting booking;
+confirm/reschedule; payment/invoice; reports; backup; restart persistence; restore.
+
+4. TEST RESULTS
+----------------
+
+Build:
+    dotnet build ScheduleOS.sln -c Release --no-restore
+    Result: PASS, 7 projects, 0 warnings, 0 errors.
+
+Unit:
+    Result: PASS, 62 passed, 0 failed, 0 skipped.
+
+Integration:
+    Result: PASS, 33 passed, 0 failed, 0 skipped.
+    The 33 includes the added customer-search relevance regression test.
+
+UI acceptance against Debug executable:
+    Result: PASS, 1 passed, 0 failed; duration 7m 12s.
+
+UI acceptance against published executable:
+    Result: PASS, 1 passed, 0 failed; duration 7m 15s.
+    Executable selected explicitly through SCHEDULEOS_EXE.
+
+Dependency vulnerability audit:
+    dotnet list ScheduleOS.sln package --vulnerable --include-transitive
+    Result: no vulnerable packages reported for all 7 projects by the configured
+    NuGet advisory source.
+
+5. RELEASE ARTIFACT
+--------------------
+
+Path: artifacts\release\win-x64\ScheduleOS.exe
+Publish: Release, win-x64, self-contained, single-file, PublishTrimmed=false
+Measured size: 143,740,679 bytes
+Version: 1.0.0
+SHA-256: FCB1688B1930095D57E78A3DA39154CF5010FFE79526C801F12C822606A1230F
+
+The release executable was launched by the full acceptance suite and passed the
+complete journey, including close/relaunch and restore/relaunch.
+
+6. DATA SAFETY
+---------------
+
+Default per-user paths:
+    %LOCALAPPDATA%\ScheduleOS\Data\scheduleos.db
+    %LOCALAPPDATA%\ScheduleOS\Backups
+    %LOCALAPPDATA%\ScheduleOS\Logs
+
+The installer script deliberately installs under the per-user Programs directory
+and contains no uninstall deletion rule. User data and backups therefore remain
+outside the executable folder and are preserved by uninstall.
+
+7. EVIDENCE
+------------
+
+Journey log: docs\acceptance\ui-journey.log
+Screenshots: docs\screenshots\
+Installer script: build\packaging\ScheduleOS.iss
+User/build instructions: README.md
+
+8. KNOWN LIMITATION / HANDOFF
+------------------------------
+
+No installer .exe is included because Inno Setup was not installed on the build
+machine. To produce it, install Inno Setup, ensure iscc.exe is available, then run:
+
+    iscc build\packaging\ScheduleOS.iss
+
+The generated installer will be written to artifacts\release\installer and will
+package the already verified artifacts\release\win-x64 output.

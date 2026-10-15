@@ -1,0 +1,615 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:p="clr-namespace:ScheduleOS.Desktop.ViewModels.Pages"
+                    xmlns:core="clr-namespace:ScheduleOS.Desktop.Core">
+
+    <!-- Shared page header pieces -->
+    <Style x:Key="PageTitle" TargetType="TextBlock" BasedOn="{StaticResource Text.H1}" />
+    <Style x:Key="PageSubtitle" TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="0,4,0,0" />
+    </Style>
+    <Style x:Key="DetailLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+        <Setter Property="Width" Value="118" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style x:Key="DetailRow" TargetType="DockPanel">
+        <Setter Property="Margin" Value="0,7" />
+    </Style>
+    <Style x:Key="SectionHeader" TargetType="DockPanel">
+        <Setter Property="Margin" Value="0,0,0,12" />
+    </Style>
+
+    <!-- =================================================================== Appointments list -->
+    <DataTemplate DataType="{x:Type p:AppointmentsViewModel}">
+        <DockPanel Margin="{StaticResource Pad.Page}" AutomationProperties.AutomationId="AppointmentsPage">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource Button.Secondary}" Margin="0,0,10,0" Command="{Binding ExportCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE896;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Export CSV" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource Button.Success}" Command="{Binding NewCommand}" Visibility="{Binding CanCreate, Converter={StaticResource VisibleWhen}}"
+                            AutomationProperties.AutomationId="AppointmentsNew">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                            <TextBlock Text="New Appointment" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Appointments" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Search, filter and open every booking." Style="{StaticResource PageSubtitle}" />
+                </StackPanel>
+            </DockPanel>
+
+            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                <ComboBox ItemsSource="{Binding Presets}" SelectedItem="{Binding Preset}" Width="150" Margin="0,0,10,8" AutomationProperties.AutomationId="ApptRange" />
+                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding Status}" Width="150" Margin="0,0,10,8" AutomationProperties.AutomationId="ApptStatus" />
+                <ComboBox ItemsSource="{Binding StaffOptions}" SelectedItem="{Binding StaffFilter}" DisplayMemberPath="Name" Width="170" Margin="0,0,10,8" />
+                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Tag="Search reference, customer or service…" Width="300" Margin="0,0,14,8"
+                         AutomationProperties.AutomationId="ApptSearch" />
+                <CheckBox Content="Newest first" IsChecked="{Binding NewestFirst}" Style="{StaticResource Toggle}" VerticalAlignment="Center" Margin="0,0,0,8" />
+            </WrapPanel>
+
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                <TextBlock VerticalAlignment="Center" Style="{StaticResource Text.Secondary}">
+                    <Run Text="{Binding TotalCount, Mode=OneWay}" /><Run Text=" appointments" />
+                </TextBlock>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource Button.IconOutline}" Content="&#xE76B;" Command="{Binding PreviousPageCommand}" AutomationProperties.Name="Previous page" />
+                    <TextBlock VerticalAlignment="Center" Margin="12,0" Style="{StaticResource Text.Secondary}">
+                        <Run Text="Page " /><Run Text="{Binding Page, Mode=OneWay}" /><Run Text=" of " /><Run Text="{Binding PageCount, Mode=OneWay}" />
+                    </TextBlock>
+                    <Button Style="{StaticResource Button.IconOutline}" Content="&#xE76C;" Command="{Binding NextPageCommand}" AutomationProperties.Name="Next page" />
+                </StackPanel>
+            </DockPanel>
+
+            <Border Style="{StaticResource Card}" Padding="8">
+                <Grid>
+                    <DataGrid ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}" core:ItemActivation.Command="{Binding OpenCommand}" AutomationProperties.AutomationId="AppointmentsGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="REFERENCE" Binding="{Binding Reference}" Width="120" />
+                            <DataGridTextColumn Header="DATE" Binding="{Binding Start, StringFormat={}{0:ddd, MMM d yyyy}}" Width="130" />
+                            <DataGridTextColumn Header="TIME" Binding="{Binding Start, StringFormat={}{0:h:mm tt}}" Width="80" />
+                            <DataGridTemplateColumn Header="CUSTOMER" Width="1.3*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ContentPresenter Content="{Binding CustomerName}" ContentTemplate="{StaticResource Avatar}" Margin="0,0,10,0" />
+                                            <TextBlock Text="{Binding CustomerName}" Style="{StaticResource Text.Strong}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="SERVICES" Binding="{Binding Services}" Width="1.5*" />
+                            <DataGridTextColumn Header="STAFF" Binding="{Binding Staff}" Width="*" />
+                            <DataGridTemplateColumn Header="STATUS" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentPresenter Content="{Binding Status}" ContentTemplate="{StaticResource StatusPill}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="TOTAL" Binding="{Binding TotalMinor, Converter={StaticResource Money}}" Width="100" />
+                            <DataGridTextColumn Header="PAID" Binding="{Binding PaidMinor, Converter={StaticResource Money}}" Width="100" />
+                            <DataGridTemplateColumn Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource Button.Link}" Content="Open" AutomationProperties.AutomationId="OpenAppointment"
+                                                Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Text="No appointments match these filters." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="{Binding Items.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                </Grid>
+            </Border>
+        </DockPanel>
+    </DataTemplate>
+
+    <!-- =================================================================== Appointment detail -->
+    <DataTemplate DataType="{x:Type p:AppointmentDetailViewModel}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False" AutomationProperties.AutomationId="AppointmentDetailPage">
+            <Grid Margin="{StaticResource Pad.Page}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1.05*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Header -->
+                <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,18">
+                    <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Bottom" HorizontalAlignment="Right" MaxWidth="820">
+                        <Button Style="{StaticResource Button.Success}" Margin="6,0,0,6" Command="{Binding ConfirmCommand}" Visibility="{Binding Detail.Actions.CanConfirm, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActConfirm">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE73E;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Confirm" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding RescheduleCommand}" Visibility="{Binding Detail.Actions.CanReschedule, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActReschedule">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE787;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Reschedule" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding CheckInCommand}" Visibility="{Binding Detail.Actions.CanCheckIn, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActCheckIn">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE77B;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Info}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Check In" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding StartCommand}" Visibility="{Binding Detail.Actions.CanStart, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActStart">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Purple}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Start Service" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding CompleteCommand}" Visibility="{Binding Detail.Actions.CanComplete, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActComplete">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7C1;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Success}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Complete" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding NoShowCommand}" Visibility="{Binding Detail.Actions.CanNoShow, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActNoShow" Content="No-show" />
+                        <Button Style="{StaticResource Button.DangerSoft}" Margin="6,0,0,6" Command="{Binding CancelAppointmentCommand}" Visibility="{Binding Detail.Actions.CanCancel, Converter={StaticResource VisibleWhen}}"
+                                AutomationProperties.AutomationId="ActCancel">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE711;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Cancel" /></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding CorrectStatusCommand}" Visibility="{Binding Detail.Actions.CorrectionTarget, Converter={StaticResource VisibleWhen}}"
+                                ToolTip="Controlled correction of a final status (Owner/Manager)" Content="Correct Status" />
+                        <Button Style="{StaticResource Button.Secondary}" Margin="6,0,0,6" Command="{Binding PrintCommand}" AutomationProperties.AutomationId="ActPrint">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE749;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Print" /></StackPanel>
+                        </Button>
+                    </WrapPanel>
+                    <StackPanel>
+                        <Button Style="{StaticResource Button.Link}" HorizontalAlignment="Left" Command="{Binding BackCommand}" Content="← Back" Margin="0,0,0,6" AutomationProperties.AutomationId="DetailBack" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Text.H1}" AutomationProperties.AutomationId="DetailReference">
+                                <Run Text="#" /><Run Text="{Binding Detail.Reference, Mode=OneWay}" />
+                            </TextBlock>
+                            <ContentPresenter Content="{Binding Detail.Status}" ContentTemplate="{StaticResource StatusPill}" Margin="14,4,0,0" VerticalAlignment="Center"
+                                              AutomationProperties.AutomationId="DetailStatus" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,4,0,0">
+                            <Run Text="Booked on " /><Run Text="{Binding Detail.CreatedAt, StringFormat={}{0:MMM d, yyyy 'at' h:mm tt}, Mode=OneWay}" />
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- ================= Column 1 -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,0">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="CustomerCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Edit" Command="{Binding EditCustomerCommand}" Visibility="{Binding CanEditCustomer, Converter={StaticResource VisibleWhen}}" />
+                                <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Customer Information" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Left" Width="76" Height="76" CornerRadius="38" Margin="0,0,16,0" VerticalAlignment="Top"
+                                        Background="{Binding Detail.Customer.FullName, Converter={StaticResource NameBrush}, ConverterParameter=light}">
+                                    <TextBlock Text="{Binding Detail.Customer.Initials}" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Foreground="{Binding Detail.Customer.FullName, Converter={StaticResource NameBrush}}" />
+                                </Border>
+                                <StackPanel>
+                                    <Button Style="{StaticResource Button.Link}" HorizontalAlignment="Left" Padding="0" Command="{Binding OpenCustomerCommand}" ToolTip="Open customer profile">
+                                        <TextBlock Text="{Binding Detail.Customer.FullName}" Style="{StaticResource Text.H2}" />
+                                    </Button>
+                                    <ItemsControl ItemsSource="{Binding Detail.Customer.Segments}" Margin="0,6,0,4" Focusable="False">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource Badge}" Margin="0,0,6,4" Background="{DynamicResource Brush.WarningLight}">
+                                                    <TextBlock Text="{Binding}" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Brush.WarningText}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                                        <TextBlock Text="&#xE717;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding Detail.Customer.Phone, TargetNullValue=—}" Style="{StaticResource Text.Body}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                                        <TextBlock Text="&#xE715;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding Detail.Customer.Email, TargetNullValue=—}" Style="{StaticResource Text.Body}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,4" Visibility="{Binding Detail.Customer.Address, Converter={StaticResource VisibleWhen}}">
+                                        <TextBlock Text="&#xE707;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding Detail.Customer.Address}" Style="{StaticResource Text.Body}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Style="{StaticResource Panel.Soft}" Margin="0,14,0,0">
+                                <UniformGrid Columns="3">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Detail.Customer.CompletedVisits}" Style="{StaticResource Text.H2}" />
+                                        <TextBlock Text="Total Visits" Style="{StaticResource Text.Caption}" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Detail.Customer.TotalPaidMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.H2}" />
+                                        <TextBlock Text="Total Paid" Style="{StaticResource Text.Caption}" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Detail.Customer.CustomerSince, StringFormat={}{0:MMM yyyy}}" Style="{StaticResource Text.H2}" />
+                                        <TextBlock Text="Customer Since" Style="{StaticResource Text.Caption}" />
+                                    </StackPanel>
+                                </UniformGrid>
+                            </Border>
+                            <TextBlock Text="Preferences" Style="{StaticResource Text.Strong}" Margin="0,14,0,8" Visibility="{Binding Detail.Customer.Tags, Converter={StaticResource VisibleWhen}}" />
+                            <ItemsControl ItemsSource="{Binding Detail.Customer.Tags}" Focusable="False">
+                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource Chip}">
+                                            <TextBlock Text="{Binding}" FontSize="12" Foreground="{DynamicResource Brush.Primary}" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="Contact details are hidden for your role." Style="{StaticResource Text.Caption}" Margin="0,8,0,0"
+                                       Visibility="{Binding Detail.Customer.ContactHidden, Converter={StaticResource VisibleWhen}}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" AutomationProperties.AutomationId="DetailsCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <TextBlock Text="&#xE787;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Appointment Details" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Date" Style="{StaticResource DetailLabel}" />
+                                <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Visibility="{Binding RelativeDay, Converter={StaticResource VisibleWhen}}">
+                                    <TextBlock Text="{Binding RelativeDay}" Style="{StaticResource BadgeText}" />
+                                </Border>
+                                <TextBlock Text="{Binding Detail.Start, StringFormat={}{0:ddd, MMM d, yyyy}}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Time" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Style="{StaticResource Text.Body}"><Run Text="{Binding Detail.Start, StringFormat={}{0:h:mm tt}, Mode=OneWay}" /><Run Text=" – " /><Run Text="{Binding Detail.End, StringFormat={}{0:h:mm tt}, Mode=OneWay}" /></TextBlock>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Duration" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.TotalMinutes, Converter={StaticResource Duration}}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Status" Style="{StaticResource DetailLabel}" />
+                                <ContentPresenter Content="{Binding Detail.Status}" ContentTemplate="{StaticResource StatusPill}" HorizontalAlignment="Left" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Booking Source" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.Source, Converter={StaticResource EnumText}}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Reference" Style="{StaticResource DetailLabel}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon}" Width="26" Height="26" Content="&#xE8C8;" FontSize="12" Command="{Binding CopyReferenceCommand}" ToolTip="Copy" />
+                                <TextBlock Style="{StaticResource Text.Body}"><Run Text="#" /><Run Text="{Binding Detail.Reference, Mode=OneWay}" /></TextBlock>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}" Visibility="{Binding Detail.LocationName, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="Location" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.LocationName}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Created By" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.CreatedBy, TargetNullValue=—}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Created On" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.CreatedAt, StringFormat={}{0:MMM d, yyyy 'at' h:mm tt}}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Last Updated" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.UpdatedAt, StringFormat={}{0:MMM d, yyyy 'at' h:mm tt}}" Style="{StaticResource Text.Body}" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}" Visibility="{Binding Detail.CancellationReason, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="Cancel reason" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.CancellationReason}" Style="{StaticResource Text.Wrap}" />
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ================= Column 2 -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,16,0">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="ServicesCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" MinHeight="32" Command="{Binding EditServicesCommand}"
+                                        Visibility="{Binding Detail.Actions.CanEditServices, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="EditServices">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" FontFamily="{StaticResource Font.Icons}" FontSize="11" Margin="0,0,7,0" VerticalAlignment="Center" /><TextBlock Text="Add / Edit Services" FontSize="12" /></StackPanel>
+                                </Button>
+                                <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Selected Services" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <Grid Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="64" />
+                                    <ColumnDefinition Width="76" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="SERVICE" Style="{StaticResource Text.Overline}" />
+                                <TextBlock Grid.Column="1" Text="STAFF" Style="{StaticResource Text.Overline}" />
+                                <TextBlock Grid.Column="2" Text="DURATION" Style="{StaticResource Text.Overline}" />
+                                <TextBlock Grid.Column="3" Text="PRICE" Style="{StaticResource Text.Overline}" HorizontalAlignment="Right" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Segments}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource Brush.GridLine}" BorderThickness="0,1,0,0" Padding="0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="64" />
+                                                    <ColumnDefinition Width="76" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding ServiceName}" Style="{StaticResource Text.Strong}" />
+                                                    <TextBlock Style="{StaticResource Text.Caption}"><Run Text="{Binding CategoryName, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Start, StringFormat={}{0:h:mm tt}, Mode=OneWay}" /></TextBlock>
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" Text="{Binding StaffName}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="2" Text="{Binding DurationMinutes, StringFormat={}{0} min}" Style="{StaticResource Text.Body}" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding LineTotalMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Strong}" HorizontalAlignment="Right" />
+                                                    <TextBlock Text="{Binding DiscountMinor, Converter={StaticResource Money}, StringFormat=-{0}}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right"
+                                                               Visibility="{Binding DiscountMinor, Converter={StaticResource VisibleWhen}}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Border BorderBrush="{DynamicResource Brush.GridLine}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                                <Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="Total Duration" Style="{StaticResource Text.Caption}" />
+                                        <TextBlock Text="{Binding Detail.TotalMinutes, Converter={StaticResource Duration}}" Style="{StaticResource Text.Strong}" />
+                                    </StackPanel>
+                                    <StackPanel HorizontalAlignment="Right">
+                                        <TextBlock Text="Total Price" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{Binding Detail.TotalMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.H2}" HorizontalAlignment="Right" />
+                                        <TextBlock Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" Visibility="{Binding Detail.TaxMinor, Converter={StaticResource VisibleWhen}}">
+                                            <Run Text="incl. tax " /><Run Text="{Binding Detail.TaxMinor, Converter={StaticResource Money}, Mode=OneWay}" />
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="AssignmentCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Reassign" Command="{Binding RescheduleCommand}"
+                                        Visibility="{Binding Detail.Actions.CanReschedule, Converter={StaticResource VisibleWhen}}" />
+                                <TextBlock Text="&#xE716;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Assigned Staff &amp; Resource" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding Segments}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <DockPanel>
+                                                <Border DockPanel.Dock="Left" Width="40" Height="40" CornerRadius="20" Margin="0,0,10,0" Background="{Binding StaffColor, Converter={StaticResource HexBrush}, ConverterParameter=light}">
+                                                    <TextBlock Text="{Binding StaffName, Converter={StaticResource Initials}}" FontWeight="SemiBold" Foreground="{Binding StaffColor, Converter={StaticResource HexBrush}}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="Staff Member" Style="{StaticResource Text.Caption}" />
+                                                    <TextBlock Text="{Binding StaffName}" Style="{StaticResource Text.Strong}" />
+                                                    <TextBlock Text="{Binding StaffPosition}" Style="{StaticResource Text.Caption}" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <DockPanel Grid.Column="1">
+                                                <Border DockPanel.Dock="Left" Style="{StaticResource IconTile}" Margin="0,0,10,0" Background="{DynamicResource Brush.InfoLight}">
+                                                    <TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Info}" />
+                                                </Border>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="Room / Resource" Style="{StaticResource Text.Caption}" />
+                                                    <TextBlock Text="{Binding ResourceName, TargetNullValue=Not required}" Style="{StaticResource Text.Strong}" />
+                                                    <TextBlock Text="{Binding ResourceType}" Style="{StaticResource Text.Caption}" />
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="NotesCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Primary}" MinHeight="30" Content="Save notes" Command="{Binding SaveNotesCommand}"
+                                        Visibility="{Binding NotesDirty, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="SaveNotes" />
+                                <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Notes" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <TextBlock Text="Appointment Notes (visible to the customer)" Style="{StaticResource Text.Label}" />
+                            <TextBox Style="{StaticResource TextBox.Multiline}" Text="{Binding CustomerNotes, UpdateSourceTrigger=PropertyChanged}" Tag="Notes printed on customer documents"
+                                     IsReadOnly="{Binding Detail.Actions.CanEditNotes, Converter={StaticResource Not}}" AutomationProperties.AutomationId="CustomerNotes" />
+                            <StackPanel Visibility="{Binding Detail.InternalNotesVisible, Converter={StaticResource VisibleWhen}}">
+                                <TextBlock Text="Internal Notes (Staff Only)" Style="{StaticResource Text.Label}" Margin="0,12,0,5" />
+                                <TextBox Style="{StaticResource TextBox.Multiline}" Text="{Binding InternalNotes, UpdateSourceTrigger=PropertyChanged}" Background="{DynamicResource Brush.NotesWarm}"
+                                         Tag="Never printed or shared with the customer" IsReadOnly="{Binding Detail.Actions.CanEditInternalNotes, Converter={StaticResource Not}}"
+                                         AutomationProperties.AutomationId="InternalNotes" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" AutomationProperties.AutomationId="RemindersCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Edit" Command="{Binding EditRemindersCommand}" Visibility="{Binding Detail.Actions.CanEditNotes, Converter={StaticResource VisibleWhen}}" />
+                                <TextBlock Text="&#xEA8F;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Reminders" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <TextBlock Style="{StaticResource Text.Caption}" Margin="0,0,0,6">
+                                <Run Text="E-mail: " /><Run Text="{Binding Detail.RemindByEmail, Mode=OneWay}" /><Run Text=" · SMS: " /><Run Text="{Binding Detail.RemindBySms, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail.ReminderLeadHours, Mode=OneWay}" /><Run Text=" h before" />
+                            </TextBlock>
+                            <TextBlock Text="No reminders queued for this appointment." Style="{StaticResource Text.Secondary}" Visibility="{Binding Reminders.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                            <ItemsControl ItemsSource="{Binding Reminders}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,5">
+                                            <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="{Binding Status, Converter={StaticResource ReminderBrush}, ConverterParameter=bg}" ToolTip="{Binding LastError}">
+                                                <TextBlock Text="{Binding Status, Converter={StaticResource EnumText}}" Style="{StaticResource BadgeText}" Foreground="{Binding Status, Converter={StaticResource ReminderBrush}}" />
+                                            </Border>
+                                            <Border DockPanel.Dock="Left" Style="{StaticResource IconTile}" Width="32" Height="32" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Channel, Converter={StaticResource EnumText}}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Primary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Type, Converter={StaticResource EnumText}}" Style="{StaticResource Text.Body}" FontSize="12.5" />
+                                                <TextBlock Text="{Binding DueAt, StringFormat={}{0:MMM d, yyyy h:mm tt}}" Style="{StaticResource Text.Caption}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ================= Column 3 -->
+                <StackPanel Grid.Row="1" Grid.Column="2">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="PaymentCard" Visibility="{Binding CanViewPayments, Converter={StaticResource VisibleWhen}}">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <Border DockPanel.Dock="Right" Style="{StaticResource Badge}" Background="{DynamicResource Brush.SuccessLight}">
+                                    <TextBlock Text="{Binding Detail.PaymentStatus}" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Brush.Success}" AutomationProperties.AutomationId="PaymentStatus" />
+                                </Border>
+                                <Border Width="26" Height="26" CornerRadius="13" Background="{DynamicResource Brush.Success}" Margin="0,0,10,0">
+                                    <TextBlock Text="$" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Text="Payment &amp; Invoice" Style="{StaticResource Text.H3}" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Total" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.TotalMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Strong}" HorizontalAlignment="Right" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Deposit required" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.DepositRequiredMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Body}" HorizontalAlignment="Right" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Amount paid" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.PaidMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Strong}" Foreground="{DynamicResource Brush.Success}" HorizontalAlignment="Right"
+                                           AutomationProperties.AutomationId="PaidAmount" />
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource DetailRow}">
+                                <TextBlock Text="Remaining balance" Style="{StaticResource DetailLabel}" />
+                                <TextBlock Text="{Binding Detail.BalanceMinor, Converter={StaticResource Money}}" Style="{StaticResource Text.Strong}" HorizontalAlignment="Right" AutomationProperties.AutomationId="Balance" />
+                            </DockPanel>
+                            <Border Background="{DynamicResource Brush.InfoLight}" CornerRadius="8" Padding="12,9" Margin="0,8,0,10">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Info}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                                    <TextBlock Style="{StaticResource Text.Wrap}" FontSize="12" Foreground="{DynamicResource Brush.Info}"
+                                               Text="Payments are recorded manually. Card payments are processed on your external terminal — ScheduleOS never charges cards." />
+                                </DockPanel>
+                            </Border>
+                            <UniformGrid Columns="2">
+                                <Button Style="{StaticResource Button.Secondary}" Margin="0,0,5,0" Command="{Binding ViewInvoiceCommand}" AutomationProperties.AutomationId="ViewInvoice">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,7,0" VerticalAlignment="Center" /><TextBlock Text="View Invoice" /></StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource Button.Primary}" Margin="5,0,0,0" Command="{Binding RecordPaymentCommand}" IsEnabled="{Binding Detail.Actions.CanRecordPayment}"
+                                        AutomationProperties.AutomationId="RecordPayment">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8C7;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,7,0" VerticalAlignment="Center" /><TextBlock Text="Record Payment" /></StackPanel>
+                                </Button>
+                            </UniformGrid>
+                            <ItemsControl ItemsSource="{Binding Payments}" Margin="0,12,0,0" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,4">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon}" Width="26" Height="26" Content="&#xE712;" core:MenuButton.OpenOnClick="True" AutomationProperties.Name="Payment actions">
+                                                <Button.Tag><Binding Path="DataContext" RelativeSource="{RelativeSource AncestorType=ItemsControl}" /></Button.Tag>
+                                                <Button.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="View receipt" Command="{Binding PlacementTarget.Tag.ViewReceiptCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                        <MenuItem Header="Refund…" Command="{Binding PlacementTarget.Tag.RefundCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                        <MenuItem Header="Reverse (correct a mistake)…" Command="{Binding PlacementTarget.Tag.ReverseCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" CommandParameter="{Binding}" />
+                                                    </ContextMenu>
+                                                </Button.ContextMenu>
+                                            </Button>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding SignedAmountMinor, Converter={StaticResource Money}}" FontWeight="SemiBold"
+                                                       Foreground="{Binding Kind, Converter={StaticResource PaymentKindBrush}}" VerticalAlignment="Center" Margin="8,0" />
+                                            <StackPanel>
+                                                <TextBlock Style="{StaticResource Text.Body}" FontSize="12.5"><Run Text="{Binding Kind, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Method, Converter={StaticResource MethodText}, Mode=OneWay}" /></TextBlock>
+                                                <TextBlock Style="{StaticResource Text.Caption}"><Run Text="{Binding ReceiptNumber, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding RecordedAt, StringFormat={}{0:MMM d, h:mm tt}, Mode=OneWay}" /></TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16" AutomationProperties.AutomationId="HistoryCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <TextBlock Text="&#xE81C;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Appointment History" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding History}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="34" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Rectangle Width="1.5" Fill="{DynamicResource Brush.Border}" HorizontalAlignment="Center" />
+                                            <Border Width="28" Height="28" CornerRadius="8" VerticalAlignment="Top" Background="{Binding IconBgKey, Converter={StaticResource ResBrush}}">
+                                                <TextBlock Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="12" Foreground="{Binding IconBrushKey, Converter={StaticResource ResBrush}}" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="8,2,8,12">
+                                                <TextBlock Text="{Binding Event.Title}" Style="{StaticResource Text.Strong}" FontSize="12.5" />
+                                                <TextBlock Text="{Binding Event.Description}" Style="{StaticResource Text.SecondaryWrap}" FontSize="11.5" />
+                                                <TextBlock Text="{Binding Event.UserName}" Style="{StaticResource Text.Caption}" Foreground="{DynamicResource Brush.TextMuted}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Margin="0,2,0,0">
+                                                <TextBlock Text="{Binding Event.Timestamp, StringFormat={}{0:MMM d, yyyy}}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                                <TextBlock Text="{Binding Event.Timestamp, StringFormat={}{0:h:mm tt}}" Style="{StaticResource Text.Caption}" HorizontalAlignment="Right" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" AutomationProperties.AutomationId="QuickActionsCard">
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SectionHeader}">
+                                <TextBlock Text="&#xE945;" Style="{StaticResource Icon}" Foreground="{DynamicResource Brush.Primary}" Margin="0,0,10,0" />
+                                <TextBlock Text="Quick Actions" Style="{StaticResource Text.H3}" />
+                            </DockPanel>
+                            <Button Style="{StaticResource Button.Secondary}" HorizontalContentAlignment="Stretch" Margin="0,0,0,8" Command="{Binding RescheduleCommand}"
+                                    IsEnabled="{Binding Detail.Actions.CanReschedule}">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Text="›" FontSize="16" /><TextBlock Text="&#xE787;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Info}" Margin="0,0,10,0" VerticalAlignment="Center" /><TextBlock Text="Reschedule Appointment" FontWeight="Normal" VerticalAlignment="Center" /></DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource Button.Secondary}" HorizontalContentAlignment="Stretch" Margin="0,0,0,8" Command="{Binding ContactCustomerCommand}">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Text="›" FontSize="16" /><TextBlock Text="&#xE8BD;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Info}" Margin="0,0,10,0" VerticalAlignment="Center" /><TextBlock Text="Send Message to Customer" FontWeight="Normal" VerticalAlignment="Center" /></DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource Button.Secondary}" HorizontalContentAlignment="Stretch" Margin="0,0,0,8" Command="{Binding AddFollowUpCommand}"
+                                    IsEnabled="{Binding Detail.Actions.CanEditNotes}">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Text="›" FontSize="16" /><TextBlock Text="&#xE8FD;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Info}" Margin="0,0,10,0" VerticalAlignment="Center" /><TextBlock Text="Add Follow-up Task" FontWeight="Normal" VerticalAlignment="Center" /></DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource Button.Secondary}" HorizontalContentAlignment="Stretch" Margin="0,0,0,8" Command="{Binding OpenCustomerCommand}">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Text="›" FontSize="16" /><TextBlock Text="&#xE77B;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Success}" Margin="0,0,10,0" VerticalAlignment="Center" /><TextBlock Text="View Customer History" FontWeight="Normal" VerticalAlignment="Center" /></DockPanel>
+                            </Button>
+                            <Button Style="{StaticResource Button.Secondary}" HorizontalContentAlignment="Stretch" Command="{Binding DuplicateCommand}" IsEnabled="{Binding Detail.Actions.CanEditNotes}">
+                                <DockPanel><TextBlock DockPanel.Dock="Right" Text="›" FontSize="16" /><TextBlock Text="&#xE8C8;" FontFamily="{StaticResource Font.Icons}" Foreground="{DynamicResource Brush.Purple}" Margin="0,0,10,0" VerticalAlignment="Center" /><TextBlock Text="Duplicate (book again next week)" FontWeight="Normal" VerticalAlignment="Center" /></DockPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </DataTemplate>
+</ResourceDictionary>

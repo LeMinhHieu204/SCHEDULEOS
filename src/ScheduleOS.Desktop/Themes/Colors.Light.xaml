@@ -1,0 +1,96 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- ScheduleOS brand palette (light workspace) -->
+    <Color x:Key="Color.Navy">#102532</Color>
+    <Color x:Key="Color.SidebarDark">#0C202C</Color>
+    <Color x:Key="Color.Primary">#008C95</Color>
+    <Color x:Key="Color.PrimaryBright">#00B8BD</Color>
+    <Color x:Key="Color.Shadow">#0B2230</Color>
+
+    <LinearGradientBrush x:Key="Brush.Sidebar" StartPoint="0,0" EndPoint="0.4,1">
+        <GradientStop Color="#0E2531" Offset="0" />
+        <GradientStop Color="#0C202C" Offset="0.55" />
+        <GradientStop Color="#0B2A33" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Brush.SidebarText" Color="#D3DEE5" />
+    <SolidColorBrush x:Key="Brush.SidebarTextMuted" Color="#7F97A5" />
+    <SolidColorBrush x:Key="Brush.SidebarHover" Color="#16FFFFFF" />
+    <LinearGradientBrush x:Key="Brush.SidebarSelected" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#0B6E76" Offset="0" />
+        <GradientStop Color="#0A4E58" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="Brush.SidebarBorder" Color="#1E3A48" />
+    <SolidColorBrush x:Key="Brush.SidebarCard" Color="#14303D" />
+
+    <SolidColorBrush x:Key="Brush.Workspace" Color="#F5F9FA" />
+    <SolidColorBrush x:Key="Brush.Surface" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="#F7FAFB" />
+    <SolidColorBrush x:Key="Brush.SurfaceHover" Color="#F0F6F7" />
+    <SolidColorBrush x:Key="Brush.Text" Color="#14253D" />
+    <SolidColorBrush x:Key="Brush.TextSecondary" Color="#67798B" />
+    <SolidColorBrush x:Key="Brush.TextMuted" Color="#97A6B2" />
+    <SolidColorBrush x:Key="Brush.Border" Color="#E2EBEF" />
+    <SolidColorBrush x:Key="Brush.BorderStrong" Color="#CBD8DE" />
+    <SolidColorBrush x:Key="Brush.InputBackground" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Brush.GridLine" Color="#EDF2F4" />
+    <SolidColorBrush x:Key="Brush.GridLineHour" Color="#E2EBEF" />
+
+    <SolidColorBrush x:Key="Brush.Primary" Color="#008C95" />
+    <SolidColorBrush x:Key="Brush.PrimaryHover" Color="#007B83" />
+    <SolidColorBrush x:Key="Brush.PrimaryPressed" Color="#006970" />
+    <SolidColorBrush x:Key="Brush.PrimaryBright" Color="#00B8BD" />
+    <SolidColorBrush x:Key="Brush.PrimaryLight" Color="#DDF5F2" />
+    <SolidColorBrush x:Key="Brush.PrimarySoft" Color="#ECFAF8" />
+    <SolidColorBrush x:Key="Brush.OnPrimary" Color="#FFFFFF" />
+    <LinearGradientBrush x:Key="Brush.PrimaryGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#00A0A8" Offset="0" />
+        <GradientStop Color="#007E87" Offset="1" />
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="Brush.Success" Color="#15A77F" />
+    <SolidColorBrush x:Key="Brush.SuccessLight" Color="#E2F6EE" />
+    <SolidColorBrush x:Key="Brush.Warning" Color="#E7A23A" />
+    <SolidColorBrush x:Key="Brush.WarningText" Color="#B7741A" />
+    <SolidColorBrush x:Key="Brush.WarningLight" Color="#FDF2DF" />
+    <SolidColorBrush x:Key="Brush.Danger" Color="#E45662" />
+    <SolidColorBrush x:Key="Brush.DangerLight" Color="#FDEBED" />
+    <SolidColorBrush x:Key="Brush.Info" Color="#3689E6" />
+    <SolidColorBrush x:Key="Brush.InfoLight" Color="#E6F0FC" />
+    <SolidColorBrush x:Key="Brush.Purple" Color="#8B5CF6" />
+    <SolidColorBrush x:Key="Brush.PurpleLight" Color="#EFE9FE" />
+    <SolidColorBrush x:Key="Brush.Neutral" Color="#7B8C99" />
+    <SolidColorBrush x:Key="Brush.NeutralLight" Color="#EEF2F4" />
+    <SolidColorBrush x:Key="Brush.NotesWarm" Color="#FEF7E6" />
+
+    <SolidColorBrush x:Key="Brush.ChartBar" Color="#B2E5E1" />
+    <SolidColorBrush x:Key="Brush.ChartBarStrong" Color="#0A7F88" />
+    <SolidColorBrush x:Key="Brush.Overlay" Color="#6610202A" />
+    <SolidColorBrush x:Key="Brush.Tooltip" Color="#14253D" />
+    <SolidColorBrush x:Key="Brush.TooltipText" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Brush.Today" Color="#008C95" />
+
+    <DrawingBrush x:Key="Brush.Hatch" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute" Viewbox="0,0,8,8" ViewboxUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#F4F6F7" Geometry="M0,0 L8,0 8,8 0,8Z" />
+                <GeometryDrawing Geometry="M0,8 L8,0">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#E1E7EA" Thickness="1.2" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+    <DrawingBrush x:Key="Brush.HatchDanger" TileMode="Tile" Viewport="0,0,8,8" ViewportUnits="Absolute" Viewbox="0,0,8,8" ViewboxUnits="Absolute">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#FDF0F1" Geometry="M0,0 L8,0 8,8 0,8Z" />
+                <GeometryDrawing Geometry="M0,8 L8,0">
+                    <GeometryDrawing.Pen>
+                        <Pen Brush="#F6C9CE" Thickness="1.2" />
+                    </GeometryDrawing.Pen>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+</ResourceDictionary>

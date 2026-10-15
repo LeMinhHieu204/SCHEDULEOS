@@ -1,0 +1,480 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:p="clr-namespace:ScheduleOS.Desktop.ViewModels.Pages"
+                    xmlns:core="clr-namespace:ScheduleOS.Desktop.Core">
+
+    <Style x:Key="FormLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Label}">
+        <Setter Property="Margin" Value="0,12,0,5" />
+    </Style>
+    <Style x:Key="SettingsSection" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Setter Property="Margin" Value="0,0,0,16" />
+        <Setter Property="Padding" Value="22,18" />
+    </Style>
+    <Style x:Key="SectionTitle" TargetType="TextBlock" BasedOn="{StaticResource Text.H3}">
+        <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+
+    <!-- =================================================================== Notifications -->
+    <DataTemplate DataType="{x:Type p:NotificationsViewModel}">
+        <DockPanel Margin="{StaticResource Pad.Page}" AutomationProperties.AutomationId="NotificationsPage">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource Button.Secondary}" Content="Process due reminders now" Margin="0,0,10,0" Command="{Binding ProcessNowCommand}" Visibility="{Binding CanSeeQueue, Converter={StaticResource VisibleWhen}}" />
+                    <Button Style="{StaticResource Button.Secondary}" Content="Mark all as read" Command="{Binding MarkAllReadCommand}" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Text="Notifications" Style="{StaticResource Text.H1}" />
+                    <TextBlock Text="In-app alerts and the reminder queue. Delivery status reflects what actually happened." Style="{StaticResource Text.Secondary}" FontSize="14" Margin="0,4,0,0" />
+                </StackPanel>
+            </DockPanel>
+            <Border Style="{StaticResource Card}" Padding="16,10">
+                <TabControl SelectedIndex="{Binding Tab}">
+                    <TabItem Header="Notifications">
+                        <Grid>
+                            <ListBox ItemsSource="{Binding Items}" core:ItemActivation.Command="{Binding OpenCommand}" AutomationProperties.AutomationId="NotificationList">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="10,10">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Dismiss" VerticalAlignment="Center"
+                                                    Command="{Binding DataContext.DismissCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}" />
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Open" Margin="0,0,14,0" VerticalAlignment="Center"
+                                                    Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}"
+                                                    Visibility="{Binding AppointmentId, Converter={StaticResource VisibleWhen}}" />
+                                            <Ellipse DockPanel.Dock="Left" Width="9" Height="9" Margin="0,6,12,0" VerticalAlignment="Top" Fill="{DynamicResource Brush.Primary}"
+                                                     Visibility="{Binding IsRead, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CreatedAt, Converter={StaticResource Relative}}" Style="{StaticResource Text.Caption}" Margin="12,0,0,0" />
+                                                    <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Strong}" />
+                                                </DockPanel>
+                                                <TextBlock Text="{Binding Message}" Style="{StaticResource Text.SecondaryWrap}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock Text="You're all caught up." Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding Items.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Reminder Queue" Visibility="{Binding CanSeeQueue, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="ReminderQueueTab">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding QueueStatus}" Width="160" />
+                                <TextBlock Text="E-mail is only delivered when SMTP is configured in Settings → Notifications. SMS requires a provider integration." Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="14,0,0,0" />
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding Queue}" core:ItemActivation.Command="{Binding PreviewCommand}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DUE" Binding="{Binding DueAt, StringFormat={}{0:MMM d, yyyy h:mm tt}}" Width="150" />
+                                    <DataGridTextColumn Header="CHANNEL" Binding="{Binding Channel}" Width="80" />
+                                    <DataGridTextColumn Header="TYPE" Binding="{Binding Type, Converter={StaticResource EnumText}}" Width="110" />
+                                    <DataGridTextColumn Header="APPOINTMENT" Binding="{Binding AppointmentReference}" Width="120" />
+                                    <DataGridTextColumn Header="RECIPIENT" Binding="{Binding Recipient}" Width="*" />
+                                    <DataGridTemplateColumn Header="STATUS" Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource Badge}" Background="{Binding Status, Converter={StaticResource ReminderBrush}, ConverterParameter=bg}" ToolTip="{Binding LastError}">
+                                                    <TextBlock Text="{Binding Status, Converter={StaticResource EnumText}}" Style="{StaticResource BadgeText}" Foreground="{Binding Status, Converter={StaticResource ReminderBrush}}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="DETAIL" Binding="{Binding LastError}" Width="1.3*" />
+                                    <DataGridTemplateColumn Width="190">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Style="{StaticResource Button.Link}" Content="Preview" Margin="0,0,10,0" Command="{Binding DataContext.PreviewCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource Button.Link}" Content="Retry" Margin="0,0,10,0" Command="{Binding DataContext.RetryCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                    <Button Style="{StaticResource Button.Link}" Content="Cancel" Command="{Binding DataContext.CancelReminderCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
+            </Border>
+        </DockPanel>
+    </DataTemplate>
+
+    <!-- =================================================================== Settings -->
+    <DataTemplate DataType="{x:Type p:SettingsViewModel}">
+        <DockPanel Margin="{StaticResource Pad.Page}" AutomationProperties.AutomationId="SettingsPage">
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                <TextBlock Text="Settings" Style="{StaticResource Text.H1}" />
+                <TextBlock Text="Business profile, scheduling rules, notifications, users, data protection and appearance." Style="{StaticResource Text.Secondary}" FontSize="14" Margin="0,4,0,0" />
+            </StackPanel>
+            <TabControl SelectedIndex="{Binding Tab}">
+                <!-- ============ Business -->
+                <TabItem Header="Business" AutomationProperties.AutomationId="TabBusiness">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="980" HorizontalAlignment="Left" IsEnabled="{Binding CanManageSettings}">
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Business profile" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Business name" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding Business.Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SetBusinessName" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Phone" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding Business.Phone, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="E-mail" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding Business.Email, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Currency" Style="{StaticResource FormLabel}" /><ComboBox ItemsSource="{Binding Currencies}" SelectedItem="{Binding Currency}" /></StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="Address" Style="{StaticResource FormLabel}" />
+                                    <TextBox Text="{Binding Business.Address, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Style="{StaticResource Text.Caption}" Margin="0,8,0,0"><Run Text="Time zone: " /><Run Text="{Binding Business.TimeZoneId, Mode=OneWay}" /><Run Text=" (appointment times are stored as local business time)" /></TextBlock>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Opening hours" Style="{StaticResource SectionTitle}" />
+                                    <ItemsControl ItemsSource="{Binding Hours}" Margin="0,8,0,0" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                    <TextBlock Text="{Binding Day}" Width="120" VerticalAlignment="Center" Style="{StaticResource Text.Strong}" />
+                                                    <CheckBox Content="Open" IsChecked="{Binding IsOpen}" Style="{StaticResource Toggle}" Width="100" VerticalAlignment="Center" />
+                                                    <TextBox Text="{Binding Open, UpdateSourceTrigger=PropertyChanged}" Width="90" Margin="0,0,8,0" IsEnabled="{Binding IsOpen}" />
+                                                    <TextBlock Text="to" VerticalAlignment="Center" Margin="0,0,8,0" Style="{StaticResource Text.Secondary}" />
+                                                    <TextBox Text="{Binding Close, UpdateSourceTrigger=PropertyChanged}" Width="90" IsEnabled="{Binding IsOpen}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Button Style="{StaticResource Button.Primary}" Content="Save business profile &amp; hours" HorizontalAlignment="Left" Margin="0,16,0,0" Command="{Binding SaveBusinessCommand}"
+                                            AutomationProperties.AutomationId="SaveBusiness" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="Add closure" Command="{Binding AddHolidayCommand}" />
+                                        <TextBlock Text="Closures &amp; public holidays" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <TextBlock Text="No closures scheduled." Style="{StaticResource Text.Secondary}" Margin="0,8,0,0" Visibility="{Binding Holidays.Count, Converter={StaticResource VisibleWhen}, ConverterParameter=invert}" />
+                                    <ItemsControl ItemsSource="{Binding Holidays}" Margin="0,8,0,0" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,3">
+                                                    <Button DockPanel.Dock="Right" Style="{StaticResource Button.Link}" Content="Remove" Foreground="{DynamicResource Brush.Danger}"
+                                                            Command="{Binding DataContext.RemoveHolidayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                                    <TextBlock><Run Text="{Binding Date, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding Name, Mode=OneWay}" /></TextBlock>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Button.Secondary}" Content="Add location" Command="{Binding AddLocationCommand}" />
+                                        <TextBlock Text="Locations" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <ItemsControl ItemsSource="{Binding Locations}" Margin="0,8,0,0" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,4">
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                        <Button Style="{StaticResource Button.Link}" Content="Rename" Margin="0,0,12,0" Command="{Binding DataContext.RenameLocationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                                        <Button Style="{StaticResource Button.Link}" Content="Activate / Deactivate" Command="{Binding DataContext.ToggleLocationCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                                    </StackPanel>
+                                                    <TextBlock><Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="  " /><Run Text="{Binding IsActive, Mode=OneWay, StringFormat=active: {0}}" Foreground="{DynamicResource Brush.TextSecondary}" /></TextBlock>
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ Appointments -->
+                <TabItem Header="Appointments" AutomationProperties.AutomationId="TabAppointments">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="980" HorizontalAlignment="Left" IsEnabled="{Binding CanManageSettings}">
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Calendar &amp; booking rules" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Slot interval (minutes)" Style="{StaticResource FormLabel}" /><ComboBox ItemsSource="{Binding SlotOptions}" SelectedItem="{Binding S.SlotIntervalMinutes}" AutomationProperties.AutomationId="SetSlot" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Calendar day starts (hour)" Style="{StaticResource FormLabel}" /><ComboBox ItemsSource="{Binding HourOptions}" SelectedItem="{Binding S.CalendarStartHour}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Calendar day ends (hour)" Style="{StaticResource FormLabel}" /><ComboBox ItemsSource="{Binding HourOptions}" SelectedItem="{Binding S.CalendarEndHour}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Default preparation buffer (min)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.DefaultPrepMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Default cleanup buffer (min)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.DefaultCleanupMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Minimum booking lead time (min)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.MinimumLeadMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                    <CheckBox Content="New bookings start as Confirmed (otherwise Pending)" IsChecked="{Binding S.NewBookingsConfirmed}" Style="{StaticResource Toggle}" Margin="0,16,0,0" />
+                                    <CheckBox Content="Allow Owners/Managers to override soft rules (overtime, breaks, outside opening hours). Hard conflicts can never be overridden." IsChecked="{Binding S.AllowOvertimeOverride}" Style="{StaticResource Toggle}" Margin="0,10,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Cancellation &amp; no-show policy" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="2">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Cancellation notice (hours)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.CancellationNoticeHours, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="No-show grace period (minutes)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.NoShowGraceMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="Cancellation policy text" Style="{StaticResource FormLabel}" />
+                                    <TextBox Style="{StaticResource TextBox.Multiline}" MinHeight="54" Text="{Binding S.CancellationPolicy, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="No-show policy text" Style="{StaticResource FormLabel}" />
+                                    <TextBox Style="{StaticResource TextBox.Multiline}" MinHeight="54" Text="{Binding S.NoShowPolicy, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Pricing, invoices &amp; customer segments" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Tax rate (%)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding TaxPercent, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Tax label" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.TaxLabel, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Invoice footer" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.InvoiceFooter, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="New customer = joined within (days)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.NewCustomerDays, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Returning = at least (visits)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.ReturningMinVisits, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Inactive after (days without visit)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.InactiveDays, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="VIP = at least (visits)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.VipMinVisits, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="…or total spent at least" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding VipSpent, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Frequent cancellations (cancels + no-shows)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.FrequentCancellationCount, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                    <TextBlock Text="Tax is applied to new bookings. Invoices are commercial documents and are not certified jurisdiction-specific tax invoices." Style="{StaticResource Text.Caption}" Margin="0,10,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Security" Style="{StaticResource SectionTitle}" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Lock session after idle (minutes)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SessionLockMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Failed sign-ins before lockout" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.MaxFailedLogins, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Lockout duration (minutes)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.LockoutMinutes, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Button Style="{StaticResource Button.Primary}" Content="Save settings" HorizontalAlignment="Left" Command="{Binding SaveSettingsCommand}" AutomationProperties.AutomationId="SaveSettings" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ Notifications -->
+                <TabItem Header="Notifications" AutomationProperties.AutomationId="TabNotifications">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="980" HorizontalAlignment="Left" IsEnabled="{Binding CanManageSettings}">
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Reminders" Style="{StaticResource SectionTitle}" />
+                                    <CheckBox Content="Send a confirmation message when an appointment is confirmed" IsChecked="{Binding S.SendConfirmationMessages}" Style="{StaticResource Toggle}" Margin="0,10,0,0" />
+                                    <CheckBox Content="E-mail reminders on by default for new bookings" IsChecked="{Binding S.DefaultRemindByEmail}" Style="{StaticResource Toggle}" Margin="0,10,0,0" />
+                                    <CheckBox Content="SMS reminders on by default for new bookings" IsChecked="{Binding S.DefaultRemindBySms}" Style="{StaticResource Toggle}" Margin="0,10,0,0" />
+                                    <CheckBox Content="Show in-app reminders for upcoming appointments" IsChecked="{Binding S.LocalNotificationsEnabled}" Style="{StaticResource Toggle}" Margin="0,10,0,0" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Customer reminder lead time (hours)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.ReminderLeadHours, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="In-app reminder (minutes before)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.InAppReminderMinutesBefore, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Follow-up after visit (days, 0 = off)" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.FollowUpDaysAfterVisit, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="E-mail delivery (SMTP)" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="{Binding SmtpStatus}" Style="{StaticResource Text.SecondaryWrap}" />
+                                    <UniformGrid Columns="3">
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="SMTP host" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SmtpHost, UpdateSourceTrigger=PropertyChanged}" Tag="smtp.example.com" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Port" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SmtpPort, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Encryption" Style="{StaticResource FormLabel}" /><CheckBox Content="Use SSL/TLS" IsChecked="{Binding S.SmtpUseSsl}" Style="{StaticResource Toggle}" Margin="0,8,0,0" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Username" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SmtpUser, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Password (stored with Windows DPAPI)" Style="{StaticResource FormLabel}" /><PasswordBox core:PasswordBoxAssist.BoundPassword="{Binding SmtpPassword, Mode=TwoWay}" /></StackPanel>
+                                        <StackPanel><TextBlock Text="Sender address" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SmtpFromAddress, UpdateSourceTrigger=PropertyChanged}" Tag="bookings@yourbusiness.com" /></StackPanel>
+                                        <StackPanel Margin="0,0,16,0"><TextBlock Text="Sender name" Style="{StaticResource FormLabel}" /><TextBox Text="{Binding S.SmtpFromName, UpdateSourceTrigger=PropertyChanged}" /></StackPanel>
+                                    </UniformGrid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                        <TextBox Text="{Binding TestEmailTo, UpdateSourceTrigger=PropertyChanged}" Tag="Send a test e-mail to…" Width="280" Margin="0,0,10,0" />
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Send test e-mail" Command="{Binding SendTestEmailCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="SMS" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="{Binding SmsStatus}" Style="{StaticResource Text.SecondaryWrap}" />
+                                </StackPanel>
+                            </Border>
+                            <Button Style="{StaticResource Button.Primary}" Content="Save notification settings" HorizontalAlignment="Left" Command="{Binding SaveSettingsCommand}" />
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ Users -->
+                <TabItem Header="Users &amp; Roles" Visibility="{Binding CanManageUsers, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="TabUsers">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Right" Style="{StaticResource SettingsSection}" Width="360" Margin="16,0,0,0" VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="Role permissions" Style="{StaticResource SectionTitle}" />
+                                <ItemsControl ItemsSource="{Binding RoleDescriptions}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding}" Style="{StaticResource Text.SecondaryWrap}" Margin="0,8,0,0" /></DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="Permissions are enforced by the application services, not only by hiding buttons. Local roles do not protect against someone with direct access to the database file — use Windows accounts and disk encryption for that."
+                                           Style="{StaticResource Text.SecondaryWrap}" FontSize="11.5" Margin="0,14,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingsSection}" Padding="12">
+                            <DockPanel>
+                                <Button DockPanel.Dock="Top" HorizontalAlignment="Left" Style="{StaticResource Button.Success}" Margin="6,0,0,10" Command="{Binding AddUserCommand}" AutomationProperties.AutomationId="AddUser">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8FA;" FontFamily="{StaticResource Font.Icons}" Margin="0,0,8,0" VerticalAlignment="Center" /><TextBlock Text="Add user" /></StackPanel>
+                                </Button>
+                                <DataGrid ItemsSource="{Binding Users}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="NAME" Binding="{Binding DisplayName}" Width="*" />
+                                        <DataGridTextColumn Header="USERNAME" Binding="{Binding Username}" Width="*" />
+                                        <DataGridTextColumn Header="ROLE" Binding="{Binding Role}" Width="100" />
+                                        <DataGridTextColumn Header="STAFF PROFILE" Binding="{Binding StaffName}" Width="*" />
+                                        <DataGridTextColumn Header="ACTIVE" Binding="{Binding IsActive}" Width="70" />
+                                        <DataGridTextColumn Header="LAST SIGN-IN" Binding="{Binding LastLoginAt, StringFormat={}{0:MMM d, h:mm tt}}" Width="130" />
+                                        <DataGridTemplateColumn Width="170">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Style="{StaticResource Button.Link}" Content="Edit" Margin="0,0,12,0" Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                        <Button Style="{StaticResource Button.Link}" Content="Reset password" Command="{Binding DataContext.ResetPasswordCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+
+                <!-- ============ Data -->
+                <TabItem Header="Data &amp; Backup" AutomationProperties.AutomationId="TabData">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="1100" HorizontalAlignment="Left">
+                            <Border Style="{StaticResource SettingsSection}">
+                                <StackPanel>
+                                    <TextBlock Text="Storage" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,6,0,0"><Run Text="Database: " /><Run Text="{Binding DatabasePath, Mode=OneWay}" Foreground="{DynamicResource Brush.Text}" /></TextBlock>
+                                    <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"><Run Text="Backups: " /><Run Text="{Binding BackupDirectory, Mode=OneWay}" Foreground="{DynamicResource Brush.Text}" /></TextBlock>
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Open data folder" Margin="0,0,8,0" Command="{Binding OpenFolderCommand}" CommandParameter="data" />
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Open backup folder" Margin="0,0,8,0" Command="{Binding OpenFolderCommand}" CommandParameter="backups" />
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Check database integrity" Command="{Binding CheckIntegrityCommand}" />
+                                        <TextBlock Text="{Binding Integrity}" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource Text.Strong}" AutomationProperties.AutomationId="IntegrityResult" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}" Visibility="{Binding CanBackup, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource Button.Secondary}" Content="Restore from file…" Margin="0,0,8,0" Command="{Binding RestoreFromFileCommand}" Visibility="{Binding CanRestore, Converter={StaticResource VisibleWhen}}" />
+                                            <Button Style="{StaticResource Button.Primary}" Content="Back up now" Command="{Binding BackupNowCommand}" AutomationProperties.AutomationId="BackupNow" />
+                                        </StackPanel>
+                                        <TextBlock Text="Backups" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                    </DockPanel>
+                                    <TextBlock Text="Backups use the SQLite online backup API and are verified with an integrity check. A safety backup is taken automatically before migrations and restores."
+                                               Style="{StaticResource Text.SecondaryWrap}" Margin="0,6,0,10" />
+                                    <WrapPanel IsEnabled="{Binding CanManageSettings}">
+                                        <CheckBox Content="Automatic backups" IsChecked="{Binding S.AutoBackupEnabled}" Style="{StaticResource Toggle}" VerticalAlignment="Center" Margin="0,0,18,8" />
+                                        <TextBlock Text="every" VerticalAlignment="Center" Margin="0,0,6,8" Style="{StaticResource Text.Secondary}" />
+                                        <TextBox Text="{Binding S.AutoBackupIntervalHours, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,6,8" />
+                                        <TextBlock Text="hours, keep" VerticalAlignment="Center" Margin="0,0,6,8" Style="{StaticResource Text.Secondary}" />
+                                        <TextBox Text="{Binding S.BackupRetentionCount, UpdateSourceTrigger=PropertyChanged}" Width="60" Margin="0,0,6,8" />
+                                        <TextBlock Text="automatic backups" VerticalAlignment="Center" Margin="0,0,18,8" Style="{StaticResource Text.Secondary}" />
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Choose folder…" Margin="0,0,8,8" Command="{Binding ChooseBackupFolderCommand}" />
+                                        <Button Style="{StaticResource Button.Secondary}" Content="Save backup settings" Margin="0,0,0,8" Command="{Binding SaveSettingsCommand}" />
+                                    </WrapPanel>
+                                    <DataGrid ItemsSource="{Binding Backups}" MaxHeight="340" Margin="0,8,0,0" AutomationProperties.AutomationId="BackupsGrid">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="CREATED" Binding="{Binding CreatedAt, StringFormat={}{0:MMM d, yyyy h:mm tt}}" Width="160" />
+                                            <DataGridTextColumn Header="KIND" Binding="{Binding Kind}" Width="110" />
+                                            <DataGridTextColumn Header="FILE" Binding="{Binding FilePath, Converter={StaticResource FileName}}" Width="*" />
+                                            <DataGridTextColumn Header="SIZE" Binding="{Binding SizeBytes, Converter={StaticResource Bytes}}" Width="80" />
+                                            <DataGridTextColumn Header="VERIFIED" Binding="{Binding IsValid}" Width="80" />
+                                            <DataGridTemplateColumn Width="150">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Style="{StaticResource Button.Link}" Content="Validate" Margin="0,0,12,0" Command="{Binding DataContext.ValidateBackupCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                            <Button Style="{StaticResource Button.Link}" Content="Restore" Foreground="{DynamicResource Brush.Danger}" Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                                    Visibility="{Binding DataContext.CanRestore, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource VisibleWhen}}" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource SettingsSection}" Visibility="{Binding IsDemo, Converter={StaticResource VisibleWhen}}">
+                                <StackPanel>
+                                    <TextBlock Text="Demo workspace" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="This workspace contains fictional demo records. Resetting removes demo records only and creates fresh demo data relative to today. Records you created are kept."
+                                               Style="{StaticResource Text.SecondaryWrap}" Margin="0,6,0,10" />
+                                    <Button Style="{StaticResource Button.DangerSoft}" Content="Reset demo data…" HorizontalAlignment="Left" Command="{Binding ResetDemoCommand}" IsEnabled="{Binding CanManageSettings}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ============ Appearance -->
+                <TabItem Header="Appearance" AutomationProperties.AutomationId="TabAppearance">
+                    <Border Style="{StaticResource SettingsSection}" HorizontalAlignment="Left" Width="560" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Appearance" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="Theme" Style="{StaticResource FormLabel}" />
+                            <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}" AutomationProperties.AutomationId="SetTheme" />
+                            <TextBlock Text="Density" Style="{StaticResource FormLabel}" />
+                            <ComboBox ItemsSource="{Binding Densities}" SelectedItem="{Binding Density}" />
+                            <CheckBox Content="Collapse the sidebar to icons" IsChecked="{Binding SidebarCollapsed}" Style="{StaticResource Toggle}" Margin="0,14,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                <Button Style="{StaticResource Button.Primary}" Content="Apply &amp; save" Command="{Binding SaveAppearanceCommand}" Margin="0,0,10,0" />
+                                <Button Style="{StaticResource Button.Secondary}" Content="Change my password" Command="{Binding ChangePasswordCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+
+                <!-- ============ System -->
+                <TabItem Header="System" AutomationProperties.AutomationId="TabSystem">
+                    <Border Style="{StaticResource SettingsSection}" HorizontalAlignment="Left" MaxWidth="900" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="System information" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,10,0,0"><Run Text="ScheduleOS version: " Foreground="{DynamicResource Brush.TextSecondary}" /><Run Text="{Binding AppVersion, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Body}" Margin="0,6,0,0"><Run Text="Database schema: " Foreground="{DynamicResource Brush.TextSecondary}" /><Run Text="{Binding SchemaVersion, Mode=OneWay}" FontWeight="SemiBold" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Wrap}" Margin="0,6,0,0"><Run Text="Runtime: " Foreground="{DynamicResource Brush.TextSecondary}" /><Run Text="{Binding RuntimeInfo, Mode=OneWay}" /></TextBlock>
+                            <TextBlock Style="{StaticResource Text.Wrap}" Margin="0,6,0,0"><Run Text="Log directory: " Foreground="{DynamicResource Brush.TextSecondary}" /><Run Text="{Binding LogDirectory, Mode=OneWay}" /></TextBlock>
+                            <TextBlock Text="{Binding UpdateInfo}" Style="{StaticResource Text.SecondaryWrap}" Margin="0,14,0,0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button Style="{StaticResource Button.Secondary}" Content="Open log folder" Margin="0,0,8,0" Command="{Binding OpenFolderCommand}" CommandParameter="logs" />
+                                <Button Style="{StaticResource Button.Secondary}" Content="Run diagnostics (integrity check)" Command="{Binding CheckIntegrityCommand}" />
+                                <TextBlock Text="{Binding Integrity}" VerticalAlignment="Center" Margin="12,0,0,0" Style="{StaticResource Text.Strong}" />
+                            </StackPanel>
+                            <TextBlock Text="Logs never contain passwords, payment card data or customer notes." Style="{StaticResource Text.Caption}" Margin="0,12,0,0" />
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+
+                <!-- ============ Audit -->
+                <TabItem Header="Audit Log" Visibility="{Binding CanViewAudit, Converter={StaticResource VisibleWhen}}" AutomationProperties.AutomationId="TabAudit">
+                    <DockPanel>
+                        <TextBox DockPanel.Dock="Top" Text="{Binding AuditSearch, UpdateSourceTrigger=PropertyChanged}" Tag="Search the audit log…" Width="320" HorizontalAlignment="Left" Margin="0,0,0,10" />
+                        <Border Style="{StaticResource Card}" Padding="8">
+                            <DataGrid ItemsSource="{Binding AuditEntries}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="TIME" Binding="{Binding Timestamp, StringFormat={}{0:MMM d, yyyy h:mm:ss tt}}" Width="170" />
+                                    <DataGridTextColumn Header="USER" Binding="{Binding UserName}" Width="140" />
+                                    <DataGridTextColumn Header="ACTION" Binding="{Binding Action}" Width="190" />
+                                    <DataGridTextColumn Header="SUMMARY" Binding="{Binding Summary}" Width="*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
+        </DockPanel>
+    </DataTemplate>
+</ResourceDictionary>

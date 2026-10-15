@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>ScheduleOS.Desktop</RootNamespace>
+    <AssemblyName>ScheduleOS</AssemblyName>
+    <ApplicationIcon>..\..\assets\branding\scheduleos.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>ScheduleOS — Smart Appointment Manager</AssemblyTitle>
+    <Description>Every Appointment. Perfectly Organized.</Description>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScheduleOS.Infrastructure\ScheduleOS.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\assets\branding\scheduleos.ico" Link="Assets\scheduleos.ico" />
+    <Resource Include="..\..\assets\branding\logo-256.png" Link="Assets\logo-256.png" />
+  </ItemGroup>
+</Project>

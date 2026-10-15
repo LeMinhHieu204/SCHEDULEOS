@@ -1,0 +1,67 @@
+# Build output
+bin/
+obj/
+artifacts/
+publish/
+out/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Test output
+TestResults/
+*.trx
+coverage*/
+
+# Logs, local data, backups
+logs/
+*.log
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sosbak
+*.sosbak.json
+backups/
+
+# Secrets / credentials
+*.secrets.json
+secrets/
+.env
+*.pfx
+*.snk
+
+# AI assistant working directories
+.claude/
+.cursor/
+.aider*
+
+# Temporary output
+tmp/
+temp/
+*.tmp
+build/packaging/output/
+*.md
+!/README.md
+.openai/
+.agents/
+.codex/
+agents/
+.env.*
+**/bin/
+**/obj/
+coverage/
+docs/screenshots/
+*.db-*
+*.sqlite-*
+*.bak
+*.dump
+*.exe
+*.dll
+*.pdb
+*.zip
+*.pem
+*.key

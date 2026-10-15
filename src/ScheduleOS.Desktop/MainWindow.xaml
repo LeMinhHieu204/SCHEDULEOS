@@ -1,0 +1,158 @@
+<Window x:Class="ScheduleOS.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ScheduleOS.Desktop.ViewModels"
+        xmlns:views="clr-namespace:ScheduleOS.Desktop.Views"
+        xmlns:core="clr-namespace:ScheduleOS.Desktop.Core"
+        Title="ScheduleOS — Smart Appointment Manager"
+        Width="1440" Height="900" MinWidth="1200" MinHeight="760"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/ScheduleOS;component/Assets/scheduleos.ico"
+        Background="{DynamicResource Brush.Workspace}"
+        FontFamily="{StaticResource Font.UI}"
+        TextOptions.TextFormattingMode="Ideal"
+        UseLayoutRounding="True"
+        AutomationProperties.AutomationId="MainWindow"
+        d:DataContext="{d:DesignInstance vm:ShellViewModel}"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="60" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+    </WindowChrome.WindowChrome>
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding NewAppointmentCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Key="Left" Modifiers="Alt" Command="{Binding GoBackCommand}" />
+        <KeyBinding Key="L" Modifiers="Ctrl+Shift" Command="{Binding LockSessionCommand}" />
+    </Window.InputBindings>
+
+    <Border x:Name="RootBorder" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1">
+        <Grid>
+            <!-- ======================================================= Startup / error -->
+            <Grid x:Name="StartupLayer" Background="{DynamicResource Brush.Sidebar}">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Phase}" Value="{x:Static vm:ShellPhase.Starting}">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Phase}" Value="{x:Static vm:ShellPhase.Error}">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560">
+                    <Image Source="pack://application:,,,/ScheduleOS;component/Assets/logo-256.png" Width="84" Height="84" />
+                    <TextBlock Text="ScheduleOS" Foreground="White" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,16,0,2" FontFamily="{StaticResource Font.Display}" />
+                    <TextBlock Text="Every Appointment. Perfectly Organized." Foreground="{DynamicResource Brush.SidebarTextMuted}" HorizontalAlignment="Center" FontSize="13" />
+                    <ProgressBar IsIndeterminate="True" Width="220" Margin="0,26,0,12" Foreground="{DynamicResource Brush.PrimaryBright}" />
+                    <TextBlock Text="{Binding StartupMessage}" Foreground="{DynamicResource Brush.SidebarText}" TextWrapping="Wrap" TextAlignment="Center" FontSize="12.5"
+                               AutomationProperties.AutomationId="StartupMessage" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ======================================================= Onboarding / Login -->
+            <ContentControl Content="{Binding Onboarding}" />
+            <ContentControl Content="{Binding Login}" />
+
+            <!-- ======================================================= Main workspace -->
+            <Grid x:Name="MainLayer">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Phase}" Value="{x:Static vm:ShellPhase.Main}">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <views:SidebarView Grid.Column="0" />
+
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="68" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <views:TopBarView x:Name="TopBar" Grid.Row="0" />
+                    <ContentControl Grid.Row="1" Content="{Binding Navigation.Current}" Focusable="False" AutomationProperties.AutomationId="PageHost" />
+                </Grid>
+            </Grid>
+
+            <!-- ======================================================= Dialogs -->
+            <ItemsControl ItemsSource="{Binding Dialogs.Stack}" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Grid />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Background="{DynamicResource Brush.Overlay}" WindowChrome.IsHitTestVisibleInChrome="True">
+                            <Border Style="{StaticResource Card}" Padding="0" Width="{Binding DialogWidth}" MaxHeight="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource DialogMaxHeight}}"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource Shadow.Popup}" Margin="24"
+                                    AutomationProperties.AutomationId="Dialog" AutomationProperties.Name="{Binding Title}" KeyboardNavigation.TabNavigation="Cycle"
+                                    core:FocusAssist.FocusOnLoad="True" Focusable="True" FocusVisualStyle="{x:Null}">
+                                <DockPanel>
+                                    <Grid DockPanel.Dock="Top" Margin="24,18,14,8">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.H2}" VerticalAlignment="Center" />
+                                        <Button Style="{StaticResource Button.Icon}" Content="&#xE711;" HorizontalAlignment="Right" Command="{Binding CancelCommand}"
+                                                ToolTip="Close (Esc)" AutomationProperties.AutomationId="DialogClose" AutomationProperties.Name="Close dialog" />
+                                    </Grid>
+                                    <ContentControl Content="{Binding}" Focusable="False" />
+                                </DockPanel>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ======================================================= Session lock -->
+            <ContentControl Content="{Binding Lock}">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLocked}" Value="True">
+                                <Setter Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+
+            <!-- ======================================================= Toasts -->
+            <ItemsControl ItemsSource="{Binding Toasts.Items}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,22" Focusable="False" Width="380">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10" Margin="0,8,0,0"
+                                Padding="14,11" Effect="{StaticResource Shadow.Popup}" AutomationProperties.AutomationId="Toast" AutomationProperties.Name="{Binding Message}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Icon}" Style="{StaticResource Icon}" FontSize="16" Margin="0,1,12,0" VerticalAlignment="Top"
+                                           Foreground="{Binding Kind, Converter={StaticResource ToastBrush}}" />
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Button.Icon}" Width="24" Height="24" FontSize="10" Content="&#xE711;" VerticalAlignment="Top"
+                                        Command="{Binding DataContext.Toasts.DismissCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Wrap}" FontSize="12.5" VerticalAlignment="Center" />
+                            </DockPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ======================================================= Caption buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button Style="{StaticResource Button.Chrome}" Content="&#xE921;" Click="Minimize_Click" ToolTip="Minimize" AutomationProperties.Name="Minimize" />
+                <Button x:Name="MaxButton" Style="{StaticResource Button.Chrome}" Content="&#xE922;" Click="Maximize_Click" ToolTip="Maximize" AutomationProperties.Name="Maximize" />
+                <Button Style="{StaticResource Button.ChromeClose}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Close" AutomationProperties.Name="Close" AutomationProperties.AutomationId="WindowClose" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

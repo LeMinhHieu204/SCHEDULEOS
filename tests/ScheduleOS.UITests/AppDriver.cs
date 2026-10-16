@@ -52,7 +52,21 @@ public sealed class AppDriver : IDisposable
         {
             var env = Environment.GetEnvironmentVariable("SCHEDULEOS_EXE");
             if (!string.IsNullOrWhiteSpace(env)) return env;
-            foreach (var config in new[] { "Debug", "Release" })
+
+            // Match the application binary to the configuration used for the test
+            // assembly. Falling back to a stale Debug binary can make UI automation
+            // exercise an older XAML surface than the source under test.
+            var outputPath = Path.GetFullPath(AppContext.BaseDirectory);
+            var releaseMarker = Path.DirectorySeparatorChar + "Release" + Path.DirectorySeparatorChar;
+            var debugMarker = Path.DirectorySeparatorChar + "Debug" + Path.DirectorySeparatorChar;
+            var preferredConfig = outputPath.Contains(releaseMarker, StringComparison.OrdinalIgnoreCase)
+                ? "Release"
+                : outputPath.Contains(debugMarker, StringComparison.OrdinalIgnoreCase)
+                    ? "Debug"
+                    : "Release";
+            var fallbackConfig = preferredConfig == "Release" ? "Debug" : "Release";
+
+            foreach (var config in new[] { preferredConfig, fallbackConfig })
             {
                 var p = Path.Combine(RepoRoot, "src", "ScheduleOS.Desktop", "bin", config, "net10.0-windows", "ScheduleOS.exe");
                 if (File.Exists(p)) return p;
